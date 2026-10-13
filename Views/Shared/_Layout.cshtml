@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="AutoFix — sửa chữa, bảo dưỡng ô tô, xe máy, xe xăng, xe điện và hybrid. Đặt lịch và theo dõi tiến độ trực tuyến." />
+    <meta name="theme-color" content="#095df5" />
+    <title>@ViewData["Title"] | AutoFix</title>
+    <link rel="icon" type="image/svg+xml" href="~/images/autofix-mark.svg" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Đến nội dung chính</a>
+    <partial name="_Header" />
+    <main id="main-content">@RenderBody()</main>
+    <partial name="_Footer" />
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

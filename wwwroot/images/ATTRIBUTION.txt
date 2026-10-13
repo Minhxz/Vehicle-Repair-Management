@@ -1,0 +1,51 @@
+PHOTO ASSET SOURCES
+Retrieved: 2026-10-13
+
+These are illustrative stock photographs for the vehicle repair coursework website.
+They do not depict an actual business, endorse a vehicle manufacturer, or establish
+that the website operator is affiliated with any photographed brand.
+
+hero-workshop.jpg and vehicle-car.jpg
+Photographer: Erik Mclean
+Description: Silver sedan on a wet asphalt road.
+Source: https://www.pexels.com/photo/silver-car-on-gray-asphalt-road-9846107/
+Original source image: https://images.pexels.com/photos/9846107/pexels-photo-9846107.jpeg
+License: Pexels License — https://www.pexels.com/license/
+Local dimensions: 2000 x 1333 pixels
+
+vehicle-motorcycle.jpg
+Photographer: Jacob Moore
+Description: Black motorcycle parked outside a garage.
+Source: https://www.pexels.com/photo/a-black-motorcycle-parked-10981443/
+Original source image: https://images.pexels.com/photos/10981443/pexels-photo-10981443.jpeg
+License: Pexels License — https://www.pexels.com/license/
+Local dimensions: 1400 x 2100 pixels
+
+vehicle-electric.jpg
+Photographer: Kindel Media
+Description: White electric car charging under solar panels.
+Source: https://www.pexels.com/photo/white-electric-car-charging-9800024/
+Original source image: https://images.pexels.com/photos/9800024/pexels-photo-9800024.jpeg
+License: Pexels License — https://www.pexels.com/license/
+Local dimensions: 1400 x 1050 pixels
+
+workshop-detail.jpg
+Photographer: Kate Ibragimova
+Description: A mechanic inspecting the engine of a car.
+Source: https://unsplash.com/photos/mechanic-inspecting-car-engine-bEGTsOCnHro
+Original source image: https://images.unsplash.com/photo-1625047509248-ec889cbff17f
+License: Unsplash License — https://unsplash.com/license
+Local dimensions: 1800 x 1013 pixels
+
+License summary: The linked Pexels and Unsplash licenses permit using these
+photographs in website designs, including commercial designs, and allow cropping
+and other modifications. Attribution is appreciated. Consult each linked license
+for the full conditions, including restrictions on resale and implied endorsement.
+
+vehicle-truck.jpg
+Photographer: Bobby Mc Gee Lee
+Description: Silver pickup truck parked on a mountain road at sunset.
+Source: https://www.pexels.com/photo/silver-pickup-truck-parked-on-asphalt-road-12103233/
+Original source image: https://images.pexels.com/photos/12103233/pexels-photo-12103233.jpeg
+License: Pexels License — https://www.pexels.com/license/
+Local dimensions: 1600 x 1063 pixels

@@ -1,0 +1,113 @@
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = "Báo cáo & doanh thu";
+    ViewData["ManagementPage"] = "Analytics";
+}
+
+<div class="page-heading d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="mb-2">Báo cáo & doanh thu</h2>
+        <p class="text-muted mb-0">Theo dõi doanh thu sửa chữa, phụ tùng và thanh toán của cửa hàng.</p>
+    </div>
+    <button class="btn btn-outline-primary" type="button" id="analytics-export" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="me-1" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4" /></svg>
+        Xuất báo cáo CSV
+    </button>
+</div>
+
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+    <div>
+        <label class="form-label small mb-2" for="analytics-period">Kỳ báo cáo</label>
+        <select class="form-select" id="analytics-period">
+            <option value="month" selected>Tháng này</option>
+            <option value="week">7 ngày qua</option>
+            <option value="year">Năm nay</option>
+            <option value="all">Tất cả thời gian</option>
+        </select>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <span class="text-muted small" id="analytics-period-label" aria-live="polite">Đang tải dữ liệu…</span>
+        <button class="btn btn-light border" type="button" id="analytics-refresh">↻ Làm mới</button>
+    </div>
+</div>
+
+<div id="analytics-error" class="alert alert-danger" role="alert" hidden></div>
+
+<div class="row g-3 mb-4" aria-label="Tổng quan doanh thu trong kỳ">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card erp-stat-card h-100 border-0 shadow-sm"><div class="card-body p-0 w-100">
+            <div class="d-flex align-items-center justify-content-between gap-2"><span class="text-muted small">Doanh thu đã thu</span><span class="erp-stat-icon text-primary"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 3v18h17M8 16l4-5 4 2 5-7" /></svg></span></div>
+            <strong class="h4 d-block mt-3 mb-2" id="analytics-paid">—</strong>
+            <span class="text-muted small" id="analytics-paid-count">Phiếu đã thanh toán</span>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card erp-stat-card h-100 border-0 shadow-sm"><div class="card-body p-0 w-100">
+            <div class="d-flex align-items-center justify-content-between gap-2"><span class="text-muted small">Tiền công sửa chữa</span><span class="erp-stat-icon text-success"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 6a5 5 0 0 0-6 6L3 17a2.8 2.8 0 0 0 4 4l5-5a5 5 0 0 0 6-6l-3 3-4-4 3-3Z" /></svg></span></div>
+            <strong class="h4 d-block mt-3 mb-2" id="analytics-service">—</strong>
+            <span class="text-muted small">Phiếu đã thu · Trước giảm giá</span>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card erp-stat-card h-100 border-0 shadow-sm"><div class="card-body p-0 w-100">
+            <div class="d-flex align-items-center justify-content-between gap-2"><span class="text-muted small">Doanh thu phụ tùng</span><span class="erp-stat-icon text-info"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 8v9l9 5 9-5V8M12 13v9" /></svg></span></div>
+            <strong class="h4 d-block mt-3 mb-2" id="analytics-parts">—</strong>
+            <span class="text-muted small">Phiếu đã thu · Trước giảm giá</span>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card erp-stat-card h-100 border-0 shadow-sm"><div class="card-body p-0 w-100">
+            <div class="d-flex align-items-center justify-content-between gap-2"><span class="text-muted small">Chưa thanh toán</span><span class="erp-stat-icon text-warning"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 11h8m-8 4h4m5 0v3" /></svg></span></div>
+            <strong class="h4 d-block mt-3 mb-2" id="analytics-outstanding">—</strong>
+            <span class="text-muted small" id="analytics-unpaid-count">Phiếu chưa thanh toán</span>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <section class="card erp-card h-100 border-0 shadow-sm" aria-labelledby="revenue-chart-title">
+            <div class="card-header bg-white px-4 py-3 d-flex flex-wrap align-items-center justify-content-between gap-2"><h2 class="h6 mb-0" id="revenue-chart-title">Biểu đồ doanh thu</h2><span class="text-muted small" id="analytics-series-label">Doanh thu theo ngày</span></div>
+            <div class="card-body p-4">
+                <div class="chart-legend small mb-3"><span class="d-inline-block rounded-circle bg-primary me-2" style="width: 8px; height: 8px" aria-hidden="true"></span>Đã thanh toán · Sau giảm giá</div>
+                <div class="chart-container" id="analytics-chart" aria-live="polite"><div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Đang tải biểu đồ…</div></div>
+                <p class="small text-muted mb-0 mt-3" id="analytics-chart-note">Biểu đồ sử dụng thời điểm cập nhật phiếu sửa chữa.</p>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-4">
+        <section class="card erp-card h-100 border-0 shadow-sm" aria-labelledby="revenue-source-title">
+            <div class="card-header bg-white px-4 py-3"><h2 class="h6 mb-0" id="revenue-source-title">Cơ cấu nguồn thu</h2></div>
+            <div class="card-body p-4">
+                <div class="source-chart d-flex justify-content-center mb-4">
+                    <div class="donut position-relative rounded-circle d-flex align-items-center justify-content-center" id="analytics-donut" style="width: 190px; height: 190px; background: #edf0f5" role="img" aria-label="Đang tải cơ cấu nguồn thu">
+                        <div class="rounded-circle bg-white d-flex flex-column align-items-center justify-content-center text-center" style="width: 146px; height: 146px">
+                            <span class="small text-muted">Trước giảm giá</span><strong class="mt-1" id="analytics-gross">—</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="source-row d-flex justify-content-between align-items-center gap-2 mb-3"><span class="small"><span class="d-inline-block rounded-circle bg-primary me-2" style="width: 8px; height: 8px" aria-hidden="true"></span>Tiền công sửa chữa</span><strong class="small" id="analytics-service-share">—</strong></div>
+                <div class="source-row d-flex justify-content-between align-items-center gap-2"><span class="small"><span class="d-inline-block rounded-circle me-2" style="width: 8px; height: 8px; background: #1cc88a" aria-hidden="true"></span>Phụ tùng</span><strong class="small" id="analytics-parts-share">—</strong></div>
+                <p class="text-muted small mt-4 mb-0" id="analytics-source-note">Cơ cấu tính từ các hạng mục của phiếu đã thanh toán.</p>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="alert alert-light border small mb-4" id="analytics-calculation-note">Doanh thu đã thu tính sau giảm giá; tiền công và phụ tùng thể hiện giá trị trước giảm giá. Kỳ báo cáo dựa trên ngày cập nhật phiếu.</div>
+
+<section class="card erp-card border-0 shadow-sm" aria-labelledby="analytics-invoices-title">
+    <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-2 px-4 py-3"><h2 class="h6 mb-0" id="analytics-invoices-title">Phiếu sửa chữa gần đây</h2><span class="text-muted small" id="analytics-invoice-count">Đang tải…</span></div>
+    <div class="table-responsive">
+        <table class="table table-erp align-middle mb-0">
+            <caption class="visually-hidden">Các phiếu sửa chữa gần đây trong kỳ báo cáo đang chọn</caption>
+            <thead class="table-light"><tr><th class="ps-4 text-nowrap" scope="col">Mã phiếu</th><th scope="col">Khách hàng / xe</th><th class="text-nowrap" scope="col">Ngày cập nhật</th><th class="text-end text-nowrap" scope="col">Tổng thanh toán</th><th class="text-nowrap" scope="col">Thanh toán</th><th class="pe-4 text-end" scope="col">Chi tiết</th></tr></thead>
+            <tbody id="analytics-invoices"><tr><td class="text-center text-muted py-5" colspan="6">Đang tải phiếu sửa chữa…</td></tr></tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white py-3 px-4 small text-muted" id="analytics-updated">Báo cáo chỉ bao gồm các lịch hẹn đã có phiếu sửa chữa.</div>
+</section>
+
+@section Scripts {
+    <script src="~/js/analytics.js" asp-append-version="true" defer></script>
+}
