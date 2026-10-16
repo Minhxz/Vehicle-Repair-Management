@@ -1,12 +1,15 @@
 <section class="services-section section-space" id="dich-vu"><div class="section-shell">
-    <div class="section-heading"><div><span class="eyebrow">GIẢI PHÁP CHO CHIẾC XE CỦA BẠN</span><h2>Chăm đúng chỗ.<br />Sửa đúng vấn đề.</h2></div><p>Từ kiểm tra định kỳ đến sửa chữa chuyên sâu.<br />Dịch vụ rõ ràng cho từng nhu cầu.</p></div>
-    <div class="service-grid">
-        <article class="service-card"><div class="service-card-top"><svg viewBox="0 0 48 48"><path d="M31 7a12 12 0 0 0-16 15L5 32l11 11 10-10A12 12 0 0 0 41 17l-9 9-10-10Z"/></svg><span>01</span></div><h3>Bảo dưỡng định kỳ</h3><p>Thay dầu, lọc, kiểm tra và chăm sóc theo mốc sử dụng của từng dòng xe.</p><button type="button" data-service="maintenance">KHÁM PHÁ DỊCH VỤ <span>↗</span></button></article>
-        <article class="service-card"><div class="service-card-top"><svg viewBox="0 0 48 48"><path d="M8 18h30v22H8zM14 12h16v6M4 24h4m30 0h6M14 27h18m-9-9v-6h15v6"/></svg><span>02</span></div><h3>Sửa chữa tổng quát</h3><p>Kiểm tra động cơ, truyền động và khung gầm. Xác định nguyên nhân trước khi sửa.</p><button type="button" data-service="repair">KHÁM PHÁ DỊCH VỤ <span>↗</span></button></article>
-        <article class="service-card"><div class="service-card-top"><svg viewBox="0 0 48 48"><rect x="6" y="10" width="36" height="26" rx="2"/><path d="M17 42h14m-7-6v6M11 25h7l4-9 5 15 4-6h6"/></svg><span>03</span></div><h3>Chẩn đoán điện & điện tử</h3><p>Kiểm tra hệ thống điện, cảm biến và cảnh báo cho xe xăng, xe điện, hybrid.</p><button type="button" data-service="electrical">KHÁM PHÁ DỊCH VỤ <span>↗</span></button></article>
-        <article class="service-card"><div class="service-card-top"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18"/><circle cx="24" cy="24" r="10"/><path d="m24 14 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/></svg><span>04</span></div><h3>Lốp & hệ thống phanh</h3><p>Kiểm tra áp suất, độ mòn lốp, má phanh và hệ thống an toàn khi vận hành.</p><button type="button" data-service="tires">KHÁM PHÁ DỊCH VỤ <span>↗</span></button></article>
-        <article class="service-card"><div class="service-card-top"><svg viewBox="0 0 48 48"><path d="m9 24 5-12h20l5 12M5 24h38v13H5zM10 37v5m28-5v5M10 29h6m16 0h6M36 4v8m-4-4h8"/></svg><span>05</span></div><h3>Chăm sóc & làm đẹp xe</h3><p>Vệ sinh nội ngoại thất, chăm sóc bề mặt và khôi phục vẻ đẹp cho chiếc xe.</p><button type="button" data-service="detailing">KHÁM PHÁ DỊCH VỤ <span>↗</span></button></article>
-        <article class="service-card service-card-blue"><div class="service-card-top"><svg viewBox="0 0 48 48"><path d="M15 9H8v33h32V9h-7M17 5h14v9H17zM16 25l5 5 12-12M16 36h16"/></svg><span>06</span></div><h3>Kiểm tra tổng thể</h3><p>Hiểu rõ tình trạng xe trước một chuyến đi dài hoặc khi xuất hiện dấu hiệu bất thường.</p><button type="button" data-service="inspection">KHÁM PHÁ DỊCH VỤ <span>↗</span></button></article>
-    </div>
+    <div class="section-heading"><div><span class="eyebrow">DỊCH VỤ AUTOFIX</span><h2>Chọn dịch vụ.<br />Đặt lịch chăm xe.</h2></div><p>Xem hạng mục và giá tham khảo trước khi đặt lịch.<br />Chi phí thực tế được xác nhận khi tiếp nhận xe.</p></div>
+    <p id="service-catalog-message" class="catalog-message" role="status" aria-live="polite">Đang tải dịch vụ…</p>
+    <button type="button" id="service-catalog-retry" class="text-link" hidden>Tải lại danh sách</button>
+    <div class="service-grid" id="service-catalog"></div>
 </div></section>
-<dialog class="service-dialog" id="service-dialog" aria-labelledby="service-dialog-title"><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">×</button><span class="eyebrow">DỊCH VỤ AUTOFIX</span><h2 id="service-dialog-title"></h2><p id="service-dialog-description"></p><ul id="service-dialog-list"></ul><div class="service-dialog-note">Chi phí và thời gian được xác nhận sau khi kiểm tra xe và thống nhất hạng mục với khách hàng.</div><a class="button button-blue" href="/Home/Booking" id="service-dialog-booking">ĐẶT LỊCH DỊCH VỤ <span>↗</span></a></dialog>
+<dialog class="service-dialog catalog-dialog" id="service-dialog" aria-labelledby="service-dialog-title">
+    <button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">×</button>
+    <img class="catalog-detail-image" id="service-dialog-image" alt="" hidden />
+    <span class="eyebrow">DỊCH VỤ AUTOFIX</span><h2 id="service-dialog-title"></h2>
+    <p class="catalog-price" id="service-dialog-price"></p>
+    <div class="service-rich-description" id="service-dialog-description"></div>
+    <div class="service-dialog-note">Giá tham khảo theo hạng mục. AutoFix xác nhận chi phí sau khi kiểm tra xe và thống nhất với bạn.</div>
+    <a class="button button-blue" href="/Home/Booking" id="service-dialog-booking">ĐẶT LỊCH DỊCH VỤ <span>↗</span></a>
+</dialog>

@@ -4,13 +4,24 @@
         <span>AUTO<span class="brand-blue">FIX</span><small>CHĂM XE. VỮNG HÀNH TRÌNH.</small></span>
     </a>
     <nav class="desktop-nav" id="main-nav" aria-label="Điều hướng chính">
-        <a href="/Home/Services">Dịch vụ <span class="nav-chevron">⌄</span></a>
-        <a href="/Home/Vehicles">Dòng xe</a>
-        <a href="/Home/Process">Quy trình</a>
-        <a href="/Home/Tracking">Tra cứu sửa chữa</a>
+        <a href="/#dich-vu">Dịch vụ</a>
+        <a href="/#quy-trinh">Quy trình</a>
+        <a href="/Home/Tracking">Tra cứu lịch hẹn</a>
     </nav>
     <div class="header-actions">
-        <a class="account-link" href="/Account/Login"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span>Đăng nhập</span></a>
+        @if (User.IsInRole("Manager"))
+        {
+            <a class="account-link" href="/Management/Workflow">Quản lý</a>
+        }
+        else if (User.Identity?.IsAuthenticated == true)
+        {
+            <span class="account-link">@User.Identity.Name</span>
+            <button class="account-link" id="customer-logout" type="button">Đăng xuất</button>
+        }
+        else
+        {
+            <a class="account-link" href="/Account/Login"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span>Đăng nhập</span></a>
+        }
         <a class="button button-blue header-booking" href="/Home/Booking">ĐẶT LỊCH DỊCH VỤ <span>↗</span></a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Mở menu"><span></span><span></span></button>
     </div>

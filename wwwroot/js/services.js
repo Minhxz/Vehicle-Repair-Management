@@ -1,26 +1,86 @@
 (() => {
     "use strict";
+    const catalog = document.getElementById("service-catalog");
+    if (!catalog) return;
     const dialog = document.getElementById("service-dialog");
-    if (!dialog) return;
-    const items = {
-        maintenance: ["Bảo dưỡng định kỳ", "Chăm sóc xe theo thời gian và quãng đường sử dụng. Hạng mục được điều chỉnh theo hướng dẫn của từng dòng xe.", ["Kiểm tra dầu, lọc và dung dịch vận hành", "Kiểm tra hệ thống phanh, lốp và đèn", "Đánh giá những chi tiết cần bảo dưỡng"]],
-        repair: ["Sửa chữa tổng quát", "Xác định nguyên nhân của các dấu hiệu bất thường và thống nhất phương án sửa chữa phù hợp.", ["Kiểm tra động cơ và truyền động", "Đánh giá hệ thống treo, gầm và lái", "Lập phiếu hạng mục sau khi kiểm tra"]],
-        electrical: ["Chẩn đoán điện & điện tử", "Kiểm tra hệ thống điện, cảnh báo và cảm biến, phù hợp với cấu hình của từng mẫu xe.", ["Kiểm tra đèn cảnh báo và cảm biến", "Đánh giá ắc quy và hệ thống điện", "Kiểm tra điện tử trên xe điện và hybrid"]],
-        tires: ["Lốp & hệ thống phanh", "Chăm sóc các bộ phận tiếp xúc với mặt đường và hỗ trợ an toàn vận hành.", ["Kiểm tra độ mòn và áp suất lốp", "Kiểm tra má phanh, đĩa và dầu phanh", "Tư vấn hạng mục cần thay thế"]],
-        detailing: ["Chăm sóc & làm đẹp xe", "Vệ sinh và chăm sóc bề mặt phù hợp với tình trạng nội thất, ngoại thất của chiếc xe.", ["Vệ sinh nội thất và khoang xe", "Rửa xe và chăm sóc bề mặt", "Đánh giá tình trạng trước khi thực hiện"]],
-        inspection: ["Kiểm tra tổng thể", "Kiểm tra tình trạng xe trước những chuyến đi dài hoặc khi bạn muốn hiểu rõ hơn về chiếc xe.", ["Kiểm tra các hệ thống vận hành cơ bản", "Ghi nhận hiện trạng và dấu hiệu bất thường", "Tư vấn việc cần xử lý và mốc chăm sóc"]]
-    };
+    const message = document.getElementById("service-catalog-message");
+    const retry = document.getElementById("service-catalog-retry");
+    const money = value => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
     let trigger;
-    document.querySelectorAll("[data-service]").forEach(button => button.addEventListener("click", () => {
+    function safeImage(value) {
+        if (!value) return "";
+        try { const url = new URL(value, location.origin); return url.origin === location.origin && url.pathname.startsWith("/") ? url.href : ""; }
+        catch { return ""; }
+    }
+    function description(value) {
+        const source = new DOMParser().parseFromString(String(value || ""), "text/html");
+        const allowed = new Set(["P", "BR", "STRONG", "EM", "UL", "OL", "LI"]);
+        const blocked = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "SVG", "MATH", "TEMPLATE"]);
+        function copy(node) {
+            if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
+            const fragment = document.createDocumentFragment();
+            if (node.nodeType !== Node.ELEMENT_NODE || blocked.has(node.tagName)) return fragment;
+            const tag = ({ B: "STRONG", I: "EM", DIV: "P" })[node.tagName] || node.tagName;
+            const target = allowed.has(tag) ? document.createElement(tag.toLowerCase()) : fragment;
+            node.childNodes.forEach(child => target.append(copy(child)));
+            return target;
+        }
+        const result = document.createDocumentFragment();
+        source.body.childNodes.forEach(child => result.append(copy(child)));
+        return result;
+    }
+    function showService(item, button) {
         trigger = button;
-        const [title, description, details] = items[button.dataset.service];
-        document.getElementById("service-dialog-title").textContent = title;
-        document.getElementById("service-dialog-description").textContent = description;
-        document.getElementById("service-dialog-list").replaceChildren(...details.map(text => Object.assign(document.createElement("li"), { textContent: text })));
-        document.getElementById("service-dialog-booking").href = "/Home/Booking?service=" + encodeURIComponent(title);
+        document.getElementById("service-dialog-title").textContent = item.name;
+        document.getElementById("service-dialog-price").textContent = "Giá tham khảo: " + money(item.price);
+        document.getElementById("service-dialog-description").replaceChildren(description(item.description));
+        const image = document.getElementById("service-dialog-image");
+        image.hidden = true;
+        image.onerror = () => { image.hidden = true; };
+        image.onload = () => { image.hidden = false; };
+        image.alt = item.name;
+        const source = safeImage(item.imageUrl);
+        if (source) image.src = source; else image.removeAttribute("src");
+        document.getElementById("service-dialog-booking").href = "/Home/Booking?service=" + encodeURIComponent(item.name);
         dialog.showModal();
-    }));
+    }
+    function card(item) {
+        const article = document.createElement("article"); article.className = "service-card catalog-card";
+        const photo = document.createElement("div"); photo.className = "catalog-photo";
+        const fallback = document.createElement("span"); fallback.className = "catalog-photo-label"; fallback.textContent = "AUTOFIX";
+        photo.append(fallback);
+        const source = safeImage(item.imageUrl);
+        if (source) {
+            const image = document.createElement("img"); image.src = source; image.alt = item.name; image.loading = "lazy";
+            image.addEventListener("error", () => image.remove()); photo.append(image);
+        }
+        const title = document.createElement("h3"); title.textContent = item.name;
+        const price = document.createElement("p"); price.className = "catalog-price"; price.textContent = "Tham khảo: " + money(item.price);
+        const excerpt = document.createElement("p"); excerpt.className = "catalog-excerpt";
+        const plain = description(item.description).textContent.trim();
+        excerpt.textContent = plain.length > 145 ? plain.slice(0, 145) + "…" : plain || "Xem chi tiết dịch vụ và đặt lịch theo nhu cầu của bạn.";
+        const button = document.createElement("button"); button.type = "button"; button.textContent = "XEM CHI TIẾT ↗";
+        button.addEventListener("click", () => showService(item, button));
+        article.append(photo, title, price, excerpt, button);
+        return article;
+    }
+    async function load() {
+        retry.hidden = true; message.hidden = false; message.textContent = "Đang tải dịch vụ…";
+        try {
+            const data = await window.AutoFix.request("/api/services");
+            const items = data.services || [];
+            catalog.replaceChildren(...items.map(card));
+            message.textContent = items.length ? "" : "Chưa có dịch vụ. Vui lòng quay lại sau.";
+            message.hidden = Boolean(items.length);
+        } catch (error) { message.textContent = error.message; retry.hidden = false; }
+    }
+    retry.addEventListener("click", load);
     dialog.querySelector("[data-close-dialog]").addEventListener("click", () => dialog.close());
-    dialog.addEventListener("click", event => { if (event.target === dialog) { const r = dialog.getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.close(); } });
+    dialog.addEventListener("click", event => {
+        if (event.target !== dialog) return;
+        const rect = dialog.getBoundingClientRect();
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    });
     dialog.addEventListener("close", () => trigger?.focus());
+    load();
 })();

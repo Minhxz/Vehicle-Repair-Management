@@ -1,198 +1,134 @@
 (() => {
     'use strict';
-
-    const $ = (selector) => document.querySelector(selector);
     const { api, escape, money, toast } = window.AutoFix;
-    const formatNumber = (value) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(Number(value) || 0);
-    const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
-    const form = $('#inventory-form');
-    const modal = bootstrap.Modal.getOrCreateInstance($('#inventory-modal'));
-    const pageSize = 10;
-    let items = [];
-    let page = 1;
-    let selectedId = null;
-    let loading = false;
-    let saving = false;
-    let loaded = false;
+    const $ = (selector) => document.querySelector(selector);
+    const editModal = new bootstrap.Modal($('#inventory-edit-modal'));
+    const deleteModal = new bootstrap.Modal($('#inventory-delete-modal'));
+    let items = [], page = 1, totalPages = 1, requestNumber = 0;
+    let editId = null, deleteItem = null, saving = false, deleting = false;
 
-    const isLow = (item) => Number(item.stock) <= Number(item.reorderLevel);
-    const visibleItems = () => {
-        const search = normalize($('#inventory-search').value.trim());
-        const category = $('#inventory-category').value;
-        return items.filter((item) => (!search || normalize(`${item.sku} ${item.name}`).includes(search))
-            && (!category || item.category === category)
-            && (!$('#inventory-low-only').checked || isLow(item)));
-    };
-
-    function setError(selector, message = '') {
-        const element = $(selector);
-        element.textContent = message;
-        element.hidden = !message;
+    function message(selector, text) {
+        $(selector).textContent = text;
+        $(selector).hidden = !text;
     }
-
-    function statusBadge(item) {
-        if (Number(item.stock) <= 0) return '<span class="badge rounded-pill bg-danger bg-opacity-10 text-danger px-3 py-2">Hết hàng</span>';
-        if (isLow(item)) return '<span class="badge rounded-pill bg-warning bg-opacity-10 text-dark px-3 py-2">Sắp hết</span>';
-        return '<span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2">Còn hàng</span>';
+    function render(data) {
+        items = Array.isArray(data.items) ? data.items : [];
+        page = Number(data.page) || 1;
+        totalPages = Math.max(1, Number(data.totalPages) || 1);
+        const total = Number(data.total) || 0;
+        const start = (page - 1) * (Number(data.pageSize) || 10) + 1;
+        $('#inventory-rows').innerHTML = items.length ? items.map((item) => `<tr><td><strong>${escape(item.sku)}</strong></td><td>${escape(item.name)}</td><td>${escape(item.unit)}</td><td class="text-end">${Number(item.stock).toLocaleString('vi-VN')}</td><td class="text-end inventory-price">${escape(money(item.unitPrice))}</td><td><div class="inventory-row-actions"><button class="btn btn-outline-primary btn-sm" type="button" data-edit="${escape(item.id)}" aria-label="Sửa ${escape(item.name)}">Sửa</button><button class="btn btn-outline-danger btn-sm" type="button" data-delete="${escape(item.id)}" aria-label="Xóa ${escape(item.name)}">Xóa</button></div></td></tr>`).join('') : '<tr><td colspan="6" class="empty-block"><strong>Chưa có phụ tùng phù hợp</strong>Thêm phụ tùng mới hoặc thay đổi từ khóa tìm kiếm.</td></tr>';
+        $('#inventory-summary').textContent = items.length ? `Hiển thị ${start}–${start + items.length - 1} / ${total} phụ tùng` : '0 phụ tùng';
+        $('#inventory-page').textContent = `Trang ${page} / ${totalPages}`;
     }
-
-    function render() {
-        const filtered = visibleItems();
-        const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
-        page = Math.min(page, pages);
-        const start = (page - 1) * pageSize;
-        const currentItems = filtered.slice(start, start + pageSize);
-        $('#inventory-body').innerHTML = currentItems.length ? currentItems.map((item) => `
-            <tr>
-                <td class="ps-4 text-nowrap"><span class="fw-semibold text-primary">${escape(item.sku)}</span></td>
-                <td><span class="fw-semibold">${escape(item.name)}</span></td>
-                <td><span class="text-muted small">${escape(item.category)}</span></td>
-                <td class="text-end text-nowrap">${escape(money(item.unitPrice))}</td>
-                <td class="text-end text-nowrap"><span class="fw-semibold">${formatNumber(item.stock)}</span> <span class="text-muted small">${escape(item.unit)}</span><div class="text-muted small">Tối thiểu: ${formatNumber(item.reorderLevel)}</div></td>
-                <td class="text-nowrap">${statusBadge(item)}</td>
-                <td class="text-end pe-4"><button type="button" class="btn btn-sm btn-outline-primary text-nowrap" data-edit-part="${escape(item.id)}" aria-label="Chỉnh sửa ${escape(item.name)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="me-1" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6L16 3ZM14 5l5 5" /></svg>Sửa</button></td>
-            </tr>`).join('') : `<tr><td colspan="7" class="text-center py-5"><div class="text-muted mb-2">${items.length ? 'Không có phụ tùng phù hợp với bộ lọc.' : 'Kho phụ tùng chưa có dữ liệu.'}</div><span class="small text-muted">${items.length ? 'Thử tìm kiếm hoặc chọn nhóm khác.' : 'Chọn “Thêm phụ tùng” để bắt đầu quản lý kho.'}</span></td></tr>`;
-        $('#inventory-count').textContent = filtered.length ? `Hiển thị ${start + 1}–${Math.min(start + pageSize, filtered.length)} / ${filtered.length} phụ tùng` : '0 phụ tùng';
-        $('#inventory-page').textContent = `${page} / ${pages}`;
-        $('#inventory-prev').disabled = page <= 1;
-        $('#inventory-next').disabled = page >= pages;
-        $('#inventory-export').disabled = !filtered.length;
-    }
-
-    function updateSummary() {
-        const categories = [...new Set(items.map((item) => item.category))].sort((a, b) => a.localeCompare(b, 'vi'));
-        const category = $('#inventory-category').value;
-        $('#inventory-total').textContent = formatNumber(items.length);
-        $('#inventory-low').textContent = formatNumber(items.filter(isLow).length);
-        $('#inventory-categories').textContent = formatNumber(categories.length);
-        $('#inventory-value').textContent = money(items.reduce((total, item) => total + Number(item.stock) * Number(item.unitPrice), 0));
-        $('#inventory-category').innerHTML = '<option value="">Tất cả nhóm</option>' + categories.map((name) => `<option value="${escape(name)}">${escape(name)}</option>`).join('');
-        $('#inventory-category').value = categories.includes(category) ? category : '';
-        $('#part-categories').innerHTML = categories.map((name) => `<option value="${escape(name)}"></option>`).join('');
-    }
-
-    async function loadInventory() {
-        if (loading) return;
-        loading = true;
-        $('#inventory-refresh').disabled = true;
-        setError('#inventory-error');
+    async function load() {
+        const request = ++requestNumber;
+        const query = new URLSearchParams({ q: $('#inventory-search').value.trim(), page: String(page), pageSize: '10' });
+        $('#inventory-table').setAttribute('aria-busy', 'true');
+        $('#inventory-prev').disabled = true;
+        $('#inventory-next').disabled = true;
+        $('#inventory-summary').textContent = 'Đang tải dữ liệu…';
+        message('#inventory-message', '');
         try {
-            const data = await api('/api/inventory');
-            items = Array.isArray(data.items) ? data.items : [];
-            loaded = true;
-            updateSummary();
-            render();
+            const data = await api(`/api/inventory?${query}`);
+            if (request === requestNumber) render(data);
         } catch (error) {
-            setError('#inventory-error', error.message || 'Không thể tải kho phụ tùng. Vui lòng thử lại.');
-            if (!loaded) {
-                $('#inventory-body').innerHTML = '<tr><td colspan="7" class="text-muted text-center py-5">Chưa tải được dữ liệu kho phụ tùng.</td></tr>';
-                $('#inventory-count').textContent = 'Dữ liệu chưa khả dụng';
-            }
+            if (request !== requestNumber) return;
+            message('#inventory-message', error.message);
+            $('#inventory-summary').textContent = 'Không tải được danh sách. Nhấn Tìm kiếm để thử lại.';
+            if (!items.length) $('#inventory-rows').innerHTML = '<tr><td colspan="6" class="empty-block">Chưa tải được dữ liệu phụ tùng.</td></tr>';
         } finally {
-            loading = false;
-            $('#inventory-refresh').disabled = false;
+            if (request === requestNumber) {
+                $('#inventory-table').setAttribute('aria-busy', 'false');
+                $('#inventory-prev').disabled = page <= 1;
+                $('#inventory-next').disabled = page >= totalPages;
+            }
         }
     }
-
-    function openForm(item = null) {
-        if (saving) return;
-        selectedId = item ? item.id : null;
-        form.reset();
-        form.classList.remove('was-validated');
-        setError('#inventory-form-error');
-        $('#inventory-modal-title').textContent = item ? 'Chỉnh sửa phụ tùng' : 'Thêm phụ tùng';
-        $('#part-sku').value = item?.sku ?? '';
-        $('#part-name').value = item?.name ?? '';
-        $('#part-category').value = item?.category ?? '';
-        $('#part-unit').value = item?.unit ?? 'Cái';
-        $('#part-price').value = item?.unitPrice ?? 0;
-        $('#part-stock').value = item?.stock ?? 0;
-        $('#part-reorder').value = item?.reorderLevel ?? 5;
-        modal.show();
+    function openEditor(item = null) {
+        editId = item?.id ?? null;
+        $('#inventory-edit-title').textContent = item ? 'Sửa phụ tùng' : 'Thêm phụ tùng';
+        $('#inventory-sku').value = item?.sku ?? '';
+        $('#inventory-name').value = item?.name ?? '';
+        $('#inventory-unit').value = item?.unit ?? 'Cái';
+        $('#inventory-stock').value = item?.stock ?? 0;
+        $('#inventory-price').value = item?.unitPrice ?? 0;
+        message('#inventory-form-message', '');
+        editModal.show();
     }
-
-    form.addEventListener('submit', async (event) => {
+    $('#inventory-add').addEventListener('click', () => openEditor());
+    $('#inventory-edit-modal').addEventListener('shown.bs.modal', () => $('#inventory-sku').focus());
+    $('#inventory-edit-modal').addEventListener('hide.bs.modal', (event) => { if (saving) event.preventDefault(); });
+    $('#inventory-delete-modal').addEventListener('hide.bs.modal', (event) => { if (deleting) event.preventDefault(); });
+    $('#inventory-search-form').addEventListener('submit', (event) => { event.preventDefault(); page = 1; load(); });
+    $('#inventory-clear').addEventListener('click', () => { $('#inventory-search-form').reset(); page = 1; load(); });
+    $('#inventory-prev').addEventListener('click', () => { if (page > 1) { page -= 1; load(); } });
+    $('#inventory-next').addEventListener('click', () => { if (page < totalPages) { page += 1; load(); } });
+    $('#inventory-rows').addEventListener('click', (event) => {
+        const editButton = event.target.closest('[data-edit]');
+        if (editButton) {
+            const item = items.find((entry) => entry.id === Number(editButton.dataset.edit));
+            if (item) openEditor(item);
+        }
+        const deleteButton = event.target.closest('[data-delete]');
+        if (deleteButton) {
+            deleteItem = items.find((entry) => entry.id === Number(deleteButton.dataset.delete));
+            if (!deleteItem) return;
+            $('#inventory-delete-name').textContent = `${deleteItem.sku} — ${deleteItem.name}`;
+            message('#inventory-delete-message', '');
+            deleteModal.show();
+        }
+    });
+    $('#inventory-form').addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (saving) return;
-        ['#part-sku', '#part-name', '#part-category', '#part-unit'].forEach((selector) => { $(selector).value = $(selector).value.trim(); });
-        form.classList.add('was-validated');
-        if (!form.checkValidity()) {
-            form.querySelector(':invalid')?.focus();
+        if (saving || !event.currentTarget.reportValidity()) return;
+        const data = {
+            sku: $('#inventory-sku').value.trim(), name: $('#inventory-name').value.trim(),
+            unit: $('#inventory-unit').value.trim(), stock: Number($('#inventory-stock').value),
+            unitPrice: Number($('#inventory-price').value)
+        };
+        if (!data.sku || !data.name || !data.unit) {
+            message('#inventory-form-message', 'Vui lòng nhập mã, tên và đơn vị tính.');
+            return;
+        }
+        if (!Number.isInteger(data.stock) || !Number.isInteger(data.unitPrice) || data.stock < 0 || data.stock > 1000000 || data.unitPrice < 0 || data.unitPrice > 100000000) {
+            message('#inventory-form-message', 'Nhập tồn kho từ 0 đến 1.000.000 và đơn giá từ 0 đến 100.000.000 đồng, dùng số nguyên.');
             return;
         }
         saving = true;
-        setError('#inventory-form-error');
-        const saveButton = $('#inventory-save');
-        saveButton.disabled = true;
-        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Đang lưu…';
-        const payload = {
-            sku: $('#part-sku').value,
-            name: $('#part-name').value,
-            category: $('#part-category').value,
-            unit: $('#part-unit').value,
-            unitPrice: Number($('#part-price').value),
-            stock: Number($('#part-stock').value),
-            reorderLevel: Number($('#part-reorder').value)
-        };
-        const editing = selectedId !== null;
+        $('#inventory-form').querySelectorAll('input, button').forEach((element) => { element.disabled = true; });
+        message('#inventory-form-message', '');
         try {
-            const saved = await api(editing ? `/api/inventory/${encodeURIComponent(selectedId)}` : '/api/inventory', {
-                method: editing ? 'PUT' : 'POST',
-                body: JSON.stringify(payload)
-            });
-            if (saved?.id) {
-                const index = items.findIndex((item) => item.id === saved.id);
-                if (index < 0) items.push(saved); else items[index] = saved;
-                loaded = true;
-                updateSummary();
-                render();
-            }
-            modal.hide();
-            toast(editing ? 'Đã cập nhật phụ tùng.' : 'Đã thêm phụ tùng vào kho.');
-            await loadInventory();
+            const isNew = editId === null;
+            await api(isNew ? '/api/inventory' : `/api/inventory/${editId}`, { method: isNew ? 'POST' : 'PUT', body: JSON.stringify(data) });
+            saving = false;
+            editModal.hide();
+            toast(isNew ? 'Đã thêm phụ tùng.' : 'Đã cập nhật phụ tùng và số lượng tồn.');
+            load();
         } catch (error) {
-            setError('#inventory-form-error', error.message || 'Không thể lưu phụ tùng. Vui lòng thử lại.');
+            message('#inventory-form-message', error.message);
         } finally {
             saving = false;
-            saveButton.disabled = false;
-            saveButton.textContent = 'Lưu phụ tùng';
+            $('#inventory-form').querySelectorAll('input, button').forEach((element) => { element.disabled = false; });
         }
     });
-
-    $('#inventory-modal').addEventListener('shown.bs.modal', () => $('#part-sku').focus());
-    $('#inventory-add').addEventListener('click', () => openForm());
-    $('#inventory-refresh').addEventListener('click', loadInventory);
-    $('#inventory-body').addEventListener('click', (event) => {
-        const button = event.target.closest('[data-edit-part]');
-        if (!button) return;
-        const item = items.find((entry) => entry.id === button.dataset.editPart);
-        if (item) openForm(item);
+    $('#inventory-delete-confirm').addEventListener('click', async () => {
+        if (!deleteItem || deleting) return;
+        deleting = true;
+        $('#inventory-delete-modal').querySelectorAll('button').forEach((button) => { button.disabled = true; });
+        message('#inventory-delete-message', '');
+        try {
+            await api(`/api/inventory/${deleteItem.id}`, { method: 'DELETE' });
+            deleting = false;
+            deleteModal.hide();
+            toast('Đã xóa phụ tùng.');
+            load();
+        } catch (error) {
+            message('#inventory-delete-message', error.message);
+        } finally {
+            deleting = false;
+            $('#inventory-delete-modal').querySelectorAll('button').forEach((button) => { button.disabled = false; });
+        }
     });
-    $('#inventory-search').addEventListener('input', () => { if (loaded) { page = 1; render(); } });
-    ['#inventory-category', '#inventory-low-only'].forEach((selector) => $(selector).addEventListener('change', () => { if (loaded) { page = 1; render(); } }));
-    $('#inventory-prev').addEventListener('click', () => { page--; render(); });
-    $('#inventory-next').addEventListener('click', () => { page++; render(); });
-    $('#inventory-export').addEventListener('click', () => {
-        const filtered = visibleItems();
-        if (!filtered.length) return;
-        const cell = (value) => {
-            const content = String(value ?? '');
-            const safe = /^[\t\r\n]/.test(content) || /^\s*[=+\-@]/.test(content) ? `'${content}` : content;
-            return `"${safe.replace(/"/g, '""')}"`;
-        };
-        const rows = [['Mã phụ tùng', 'Tên phụ tùng', 'Nhóm', 'Đơn giá (VNĐ)', 'Tồn kho', 'Đơn vị', 'Mức tồn tối thiểu', 'Tình trạng'], ...filtered.map((item) => [item.sku, item.name, item.category, item.unitPrice, item.stock, item.unit, item.reorderLevel, Number(item.stock) <= 0 ? 'Hết hàng' : isLow(item) ? 'Sắp hết' : 'Còn hàng'])];
-        const blob = new Blob(['\uFEFF' + rows.map((row) => row.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const date = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Bangkok' }).format(new Date());
-        link.download = `autofix-kho-phu-tung-${date}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast(`Đã xuất ${filtered.length} phụ tùng.`);
-    });
-
-    loadInventory();
+    load();
 })();

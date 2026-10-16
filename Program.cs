@@ -1,13 +1,17 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Threading.RateLimiting;
+using Quản_Lý_Cửa_Hàng_Sửa_Xe.Models;
 using Quản_Lý_Cửa_Hàng_Sửa_Xe.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options => options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
+builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(new
@@ -17,16 +21,36 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .ToDictionary(item => item.Key, item => item.Value!.Errors.Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "Thông tin không hợp lệ." : error.ErrorMessage).ToArray())
     });
 });
-builder.Services.AddSingleton<AppointmentStore>();
-builder.Services.AddSingleton<InventoryStore>();
+builder.Services.AddDbContext<AutoFixDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AutoFix")));
+builder.Services.AddScoped<AppointmentStore>();
+builder.Services.AddScoped<DatabaseInitializer>();
+builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "AutoFix.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var cultures = new[] { new CultureInfo("vi-VN"), new CultureInfo("en-US") };
+    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("vi-VN");
+    options.SupportedCultures = cultures;
+    options.SupportedUICultures = cultures;
+});
 var protection = builder.Services.AddDataProtection()
     .SetApplicationName("AutoFix")
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys")));
 if (OperatingSystem.IsWindows()) protection.ProtectKeysWithDpapi();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {
-    options.Cookie.Name = "AutoFix.Manager";
+    options.Cookie.Name = "AutoFix.Auth";
     options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/Denied";
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
@@ -69,17 +93,37 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<DatabaseInitializer>().InitializeAsync();
+    var database = scope.ServiceProvider.GetRequiredService<AutoFixDbContext>();
+    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AppUser>>();
+    async Task SeedAccount(string? username, string? password, string role)
+    {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)
+            || await database.Users.AnyAsync(user => user.Username == username)) return;
+        var account = new AppUser { Username = username, Role = role };
+        account.PasswordHash = hasher.HashPassword(account, password);
+        database.Users.Add(account);
+        await database.SaveChangesAsync();
+    }
+    await SeedAccount(builder.Configuration["AutoFix:AdminUsername"] ?? (app.Environment.IsDevelopment() ? "admin" : null),
+        builder.Configuration["AutoFix:AdminPassword"] ?? (app.Environment.IsDevelopment() ? "123" : null), "Manager");
+    if (app.Environment.IsDevelopment()) await SeedAccount("khach", "123", "Customer");
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRequestLocalization();
 app.UseRouting();
 app.UseRateLimiter();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 

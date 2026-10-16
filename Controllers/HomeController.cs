@@ -16,9 +16,9 @@ namespace Quản_Lý_Cửa_Hàng_Sửa_Xe.Controllers
             return View();
         }
 
-        public IActionResult Services() => View();
-        public IActionResult Vehicles() => View();
-        public IActionResult Process() => View();
+        public IActionResult Services() => Redirect("/#dich-vu");
+        public IActionResult Vehicles() => Redirect("/#quy-trinh");
+        public IActionResult Process() => Redirect("/#quy-trinh");
         public IActionResult Booking() => View();
         public IActionResult Tracking() => View();
 

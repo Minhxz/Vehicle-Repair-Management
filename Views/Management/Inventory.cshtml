@@ -3,183 +3,57 @@
     ViewData["Title"] = "Kho phụ tùng";
     ViewData["ManagementPage"] = "Inventory";
 }
-
-<div class="page-heading d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="mb-2">Kho phụ tùng</h2>
-        <p class="text-muted mb-0">Quản lý phụ tùng, giá bán và tồn kho cho mọi loại xe.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-secondary" type="button" id="inventory-export" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="me-1" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4" /></svg>
-            Xuất CSV
-        </button>
-        <button class="btn btn-primary" type="button" id="inventory-add">
-            <span class="me-1" aria-hidden="true">+</span> Thêm phụ tùng
-        </button>
-    </div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/inventory.css" asp-append-version="true" />
+}
+<div class="page-heading">
+    <div><h2>Quản lý phụ tùng</h2><p>Nhập số lượng tồn hiện tại khi thêm/sửa phụ tùng.</p></div>
+    <button id="inventory-add" class="btn btn-primary" type="button">+ Thêm phụ tùng</button>
 </div>
-
-<div class="row g-3 mb-4" aria-label="Tổng quan kho phụ tùng">
-    <div class="col-6 col-xl-3">
-        <div class="card erp-stat-card h-100 border-0 shadow-sm">
-            <div class="card-body p-0 w-100">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                    <span class="text-muted small">Danh mục phụ tùng</span>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4e73df" stroke-width="1.7" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z M3 8v9l9 5 9-5V8M12 13v9" /></svg>
-                </div>
-                <strong class="d-block h3 mt-3 mb-1" id="inventory-total">—</strong>
-                <span class="text-muted small">Mã phụ tùng trong kho</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-3">
-        <div class="card erp-stat-card h-100 border-0 shadow-sm">
-            <div class="card-body p-0 w-100">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                    <span class="text-muted small">Cần nhập thêm</span>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f6a800" stroke-width="1.7" aria-hidden="true"><path d="m12 3 10 18H2L12 3ZM12 9v5m0 3v1" /></svg>
-                </div>
-                <strong class="d-block h3 mt-3 mb-1" id="inventory-low">—</strong>
-                <span class="text-muted small">Chạm mức tồn tối thiểu</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-3">
-        <div class="card erp-stat-card h-100 border-0 shadow-sm">
-            <div class="card-body p-0 w-100">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                    <span class="text-muted small">Nhóm phụ tùng</span>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1cc88a" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
-                </div>
-                <strong class="d-block h3 mt-3 mb-1" id="inventory-categories">—</strong>
-                <span class="text-muted small">Nhóm đang được quản lý</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-3">
-        <div class="card erp-stat-card h-100 border-0 shadow-sm">
-            <div class="card-body p-0 w-100">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                    <span class="text-muted small">Giá trị tồn kho</span>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#36b9cc" stroke-width="1.7" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 12H5m14 0h-1" /></svg>
-                </div>
-                <strong class="d-block h5 mt-3 mb-1" id="inventory-value">—</strong>
-                <span class="text-muted small">Theo đơn giá hiện tại</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<section class="card erp-card border-0 shadow-sm" aria-labelledby="inventory-list-title">
-    <div class="card-header bg-white border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2 py-3 px-4">
-        <h2 class="h6 mb-0" id="inventory-list-title">Danh sách phụ tùng</h2>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="inventory-refresh" aria-label="Tải lại danh sách phụ tùng">↻ Làm mới</button>
-    </div>
-    <div class="card-body px-4 pb-0">
-        <div class="row g-3 align-items-end mb-4">
-            <div class="col-lg-5">
-                <label class="form-label small" for="inventory-search">Tìm phụ tùng</label>
-                <input type="search" class="form-control" id="inventory-search" placeholder="Nhập tên hoặc mã phụ tùng…" autocomplete="off" />
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <label class="form-label small" for="inventory-category">Nhóm phụ tùng</label>
-                <select class="form-select" id="inventory-category"><option value="">Tất cả nhóm</option></select>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="form-check form-switch py-2">
-                    <input class="form-check-input" type="checkbox" role="switch" id="inventory-low-only" />
-                    <label class="form-check-label small" for="inventory-low-only">Chỉ phụ tùng sắp hết</label>
-                </div>
-            </div>
-        </div>
-        <div class="alert alert-danger py-3" id="inventory-error" role="alert" hidden></div>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-erp align-middle mb-0" id="inventory-table">
-            <caption class="visually-hidden">Danh sách mã, tên, nhóm, đơn giá, tồn kho và tình trạng phụ tùng</caption>
-            <thead class="table-light"><tr>
-                <th class="ps-4 text-nowrap" scope="col">Mã phụ tùng</th>
-                <th class="text-nowrap" scope="col">Tên phụ tùng</th>
-                <th class="text-nowrap" scope="col">Nhóm</th>
-                <th class="text-end text-nowrap" scope="col">Đơn giá</th>
-                <th class="text-end text-nowrap" scope="col">Tồn kho</th>
-                <th class="text-nowrap" scope="col">Tình trạng</th>
-                <th class="pe-4 text-end text-nowrap" scope="col">Thao tác</th>
-            </tr></thead>
-            <tbody id="inventory-body"><tr><td colspan="7" class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Đang tải kho phụ tùng…</td></tr></tbody>
+<p id="inventory-message" class="alert alert-danger" role="alert" hidden></p>
+<section class="card" aria-label="Danh sách phụ tùng">
+    <form id="inventory-search-form" class="inventory-search-form">
+        <div><label for="inventory-search" class="form-label">Tìm phụ tùng</label><input id="inventory-search" class="form-control" type="search" maxlength="100" placeholder="Nhập mã hoặc tên phụ tùng" /></div>
+        <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+        <button id="inventory-clear" class="btn btn-light" type="button">Xóa tìm kiếm</button>
+    </form>
+    <div id="inventory-table" class="table-responsive" aria-busy="true">
+        <table class="table table-erp inventory-table mb-0">
+            <caption class="visually-hidden">Danh sách phụ tùng và số lượng tồn hiện tại.</caption>
+            <thead><tr><th scope="col">Mã phụ tùng</th><th scope="col">Tên phụ tùng</th><th scope="col">Đơn vị tính</th><th scope="col" class="text-end">Tồn hiện tại</th><th scope="col" class="text-end">Đơn giá</th><th scope="col">Thao tác</th></tr></thead>
+            <tbody id="inventory-rows"><tr><td colspan="6" class="empty-block">Đang tải phụ tùng…</td></tr></tbody>
         </table>
     </div>
-    <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-3 px-4 py-3">
-        <span class="text-muted small" id="inventory-count" aria-live="polite">Đang tải dữ liệu…</span>
-        <div class="d-flex align-items-center gap-2" aria-label="Phân trang phụ tùng">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="inventory-prev" disabled>Trước</button>
-            <span class="small text-muted" id="inventory-page">1 / 1</span>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="inventory-next" disabled>Sau</button>
-        </div>
+    <div class="list-pagination">
+        <p id="inventory-summary" class="mb-0 text-muted" role="status" aria-live="polite">Đang tải dữ liệu…</p>
+        <nav aria-label="Phân trang phụ tùng"><button id="inventory-prev" class="btn btn-light btn-sm" type="button" disabled>Trước</button><span id="inventory-page">Trang 1 / 1</span><button id="inventory-next" class="btn btn-light btn-sm" type="button" disabled>Sau</button></nav>
     </div>
 </section>
 
-<div class="modal fade" id="inventory-modal" tabindex="-1" aria-labelledby="inventory-modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0">
-            <form id="inventory-form" novalidate>
-                <div class="modal-header px-4">
-                    <h2 class="modal-title fs-5" id="inventory-modal-title">Thêm phụ tùng</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <p class="text-muted small mb-4">Nhập thông tin phụ tùng và số lượng thực tế trong kho.</p>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label for="part-sku" class="form-label">Mã phụ tùng <span class="text-danger">*</span></label>
-                            <input type="text" id="part-sku" name="sku" class="form-control" maxlength="30" required placeholder="VD: PT-001" />
-                            <div class="invalid-feedback">Vui lòng nhập mã phụ tùng.</div>
-                        </div>
-                        <div class="col-md-8">
-                            <label for="part-name" class="form-label">Tên phụ tùng <span class="text-danger">*</span></label>
-                            <input type="text" id="part-name" name="name" class="form-control" maxlength="120" required placeholder="VD: Lọc dầu động cơ" />
-                            <div class="invalid-feedback">Vui lòng nhập tên phụ tùng.</div>
-                        </div>
-                        <div class="col-md-8">
-                            <label for="part-category" class="form-label">Nhóm phụ tùng <span class="text-danger">*</span></label>
-                            <input type="text" id="part-category" name="category" class="form-control" list="part-categories" maxlength="60" required placeholder="VD: Động cơ, Phanh, Lốp, Điện…" />
-                            <datalist id="part-categories"></datalist>
-                            <div class="invalid-feedback">Vui lòng nhập hoặc chọn nhóm phụ tùng.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="part-unit" class="form-label">Đơn vị tính <span class="text-danger">*</span></label>
-                            <input type="text" id="part-unit" name="unit" class="form-control" maxlength="20" required placeholder="Cái, Bộ, Lít…" />
-                            <div class="invalid-feedback">Vui lòng nhập đơn vị tính.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="part-price" class="form-label">Đơn giá (VNĐ) <span class="text-danger">*</span></label>
-                            <input type="number" id="part-price" name="unitPrice" class="form-control" min="0" max="1000000000" step="any" inputmode="decimal" required />
-                            <div class="invalid-feedback">Đơn giá phải từ 0 đến 1 tỷ đồng.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="part-stock" class="form-label">Số lượng tồn <span class="text-danger">*</span></label>
-                            <input type="number" id="part-stock" name="stock" class="form-control" min="0" max="1000000" step="any" inputmode="decimal" required />
-                            <div class="invalid-feedback">Tồn kho phải từ 0 đến 1 triệu.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="part-reorder" class="form-label">Mức tồn tối thiểu <span class="text-danger">*</span></label>
-                            <input type="number" id="part-reorder" name="reorderLevel" class="form-control" min="0" max="1000000" step="any" inputmode="decimal" required />
-                            <div class="invalid-feedback">Mức tồn phải từ 0 đến 1 triệu.</div>
-                        </div>
-                    </div>
-                    <div class="form-text mt-3">Kho cảnh báo cần nhập thêm khi tồn kho nhỏ hơn hoặc bằng mức tối thiểu.</div>
-                    <div class="alert alert-danger mt-3 mb-0" id="inventory-form-error" role="alert" hidden></div>
-                </div>
-                <div class="modal-footer px-4">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary" id="inventory-save">Lưu phụ tùng</button>
-                </div>
-            </form>
+<div id="inventory-edit-modal" class="modal fade" tabindex="-1" aria-labelledby="inventory-edit-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><form id="inventory-form" class="modal-content">
+        <div class="modal-header"><h2 id="inventory-edit-title" class="modal-title">Thêm phụ tùng</h2><button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Đóng"></button></div>
+        <div class="modal-body">
+            <p id="inventory-form-message" class="alert alert-danger" role="alert" hidden></p>
+            <div class="mb-3"><label for="inventory-sku" class="form-label">Mã phụ tùng *</label><input id="inventory-sku" class="form-control" required maxlength="30" placeholder="Ví dụ: PT001" /></div>
+            <div class="mb-3"><label for="inventory-name" class="form-label">Tên phụ tùng *</label><input id="inventory-name" class="form-control" required maxlength="120" /></div>
+            <div class="mb-3"><label for="inventory-unit" class="form-label">Đơn vị tính *</label><input id="inventory-unit" class="form-control" required maxlength="20" placeholder="Cái, bộ, chai…" /></div>
+            <div class="row g-3">
+                <div class="col-sm-6"><label for="inventory-stock" class="form-label">Số lượng tồn *</label><input id="inventory-stock" class="form-control" type="number" required min="0" max="1000000" step="1" /></div>
+                <div class="col-sm-6"><label for="inventory-price" class="form-label">Đơn giá (VNĐ) *</label><input id="inventory-price" class="form-control" type="number" required min="0" max="100000000" step="1" /></div>
+            </div>
+            <p class="small text-muted mt-3 mb-0">Số lượng và đơn giá là số nguyên không âm. Số lượng tồn được cập nhật trực tiếp khi lưu.</p>
         </div>
-    </div>
+        <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal" type="button">Hủy</button><button id="inventory-save" class="btn btn-primary" type="submit">Lưu phụ tùng</button></div>
+    </form></div>
 </div>
-
+<div id="inventory-delete-modal" class="modal fade" tabindex="-1" aria-labelledby="inventory-delete-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header"><h2 id="inventory-delete-title" class="modal-title">Xóa phụ tùng?</h2><button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Đóng"></button></div>
+        <div class="modal-body"><p id="inventory-delete-name" class="inventory-delete-name"></p><p class="text-muted mb-0">Phụ tùng sẽ được xóa khỏi danh sách kho.</p><p id="inventory-delete-message" class="alert alert-danger mt-3 mb-0" role="alert" hidden></p></div>
+        <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal" type="button">Giữ lại</button><button id="inventory-delete-confirm" class="btn btn-danger" type="button">Xóa phụ tùng</button></div>
+    </div></div>
+</div>
 @section Scripts {
     <script src="~/js/inventory.js" asp-append-version="true" defer></script>
 }

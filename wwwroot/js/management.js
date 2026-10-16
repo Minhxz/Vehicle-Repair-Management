@@ -4,17 +4,11 @@
     const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
     const statuses = { Pending: 'Chờ xác nhận', Confirmed: 'Đã tiếp nhận', InProgress: 'Đang sửa chữa', Completed: 'Đã hoàn thành', Cancelled: 'Đã hủy' };
     async function api(url, options = {}) {
-        const response = await fetch(url, { credentials: 'same-origin', ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
-        let result;
-        try { result = await response.json(); } catch { result = {}; }
-        if (!response.ok) {
-            if (response.status === 401) window.location.assign(`/Account/Login?returnUrl=${encodeURIComponent(location.pathname + location.search)}`);
-            const details = result.errors && Object.values(result.errors).flat().join(' ');
-            const error = new Error(details || result.message || 'Không thể xử lý yêu cầu. Vui lòng thử lại.');
-            error.status = response.status;
+        try { return await window.AutoFixHttp.request(url, options); }
+        catch (error) {
+            if (error.status === 401) window.location.assign(`/Account/Login?returnUrl=${encodeURIComponent(location.pathname + location.search)}`);
             throw error;
         }
-        return result;
     }
     function toast(message) {
         const element = document.querySelector('#erp-toast');

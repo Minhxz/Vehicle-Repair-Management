@@ -1,23 +1,16 @@
 (() => {
     "use strict";
     window.AutoFix = {
-        async request(url, options = {}) {
-            let response;
-            try { response = await fetch(url, { credentials: "same-origin", ...options, headers: { "Content-Type": "application/json", ...options.headers } }); }
-            catch { throw new Error("Không thể kết nối tới máy chủ. Vui lòng thử lại."); }
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                const details = Object.values(data.errors || {}).flat().slice(0, 2).join(" ");
-                const error = new Error(details || data.message || "Không thể xử lý yêu cầu. Vui lòng thử lại.");
-                error.fields = data.errors || {};
-                throw error;
-            }
-            return data;
-        },
+        request: window.AutoFixHttp.request,
         escape(value) { return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch])); },
         date(value) { const parts = String(value || "").split("-"); return parts.length === 3 ? parts.reverse().join("/") : value; },
         today() { return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Bangkok" }).format(new Date()); }
     };
+    document.querySelector('#customer-logout')?.addEventListener('click', async event => {
+        event.currentTarget.disabled = true;
+        try { await window.AutoFix.request('/api/auth/logout', { method: 'POST' }); location.assign('/'); }
+        catch (error) { event.currentTarget.disabled = false; alert(error.message); }
+    });
     const toggle = document.querySelector(".menu-toggle");
     const menu = document.getElementById("main-nav");
     if (toggle && menu) {

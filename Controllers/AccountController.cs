@@ -9,8 +9,14 @@ public class AccountController : Controller
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Workflow", "Management");
+            return User.IsInRole("Manager") ? RedirectToAction("Workflow", "Management") : RedirectToAction("Booking", "Home");
         ViewData["ReturnUrl"] = Url.IsLocalUrl(returnUrl) ? returnUrl : "/Management/Workflow";
+        return View();
+    }
+
+    public IActionResult Denied()
+    {
+        Response.StatusCode = StatusCodes.Status403Forbidden;
         return View();
     }
 }

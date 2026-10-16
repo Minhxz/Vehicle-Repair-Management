@@ -5,3 +5,4 @@
 *.csproj.user
 *.suo
 *.user
+**/wwwroot/uploads/

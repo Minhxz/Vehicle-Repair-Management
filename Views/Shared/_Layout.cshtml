@@ -8,6 +8,7 @@
     <title>@ViewData["Title"] | AutoFix</title>
     <link rel="icon" type="image/svg+xml" href="~/images/autofix-mark.svg" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/catalog.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -15,6 +16,7 @@
     <partial name="_Header" />
     <main id="main-content">@RenderBody()</main>
     <partial name="_Footer" />
+    <script src="~/js/http.js" asp-append-version="true" defer></script>
     <script src="~/js/site.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

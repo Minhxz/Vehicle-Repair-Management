@@ -1,17 +1,55 @@
-@{ Layout = "_ManagementLayout"; ViewData["Title"] = "Quy trình sửa chữa"; ViewData["ManagementPage"] = "Workflow"; }
-<div class="page-heading"><div><h2>Mọi chiếc xe, một hành trình.</h2><p>Kéo thẻ giữa các cột hoặc mở chi tiết để cập nhật tiến độ.</p></div><div class="actions"><button id="workflow-refresh" class="btn btn-light" type="button" aria-label="Làm mới"><svg class="erp-icon"><use href="#icon-refresh" /></svg></button><button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#new-job-modal"><svg class="erp-icon"><use href="#icon-plus" /></svg>Tiếp nhận xe</button></div></div>
-<p id="workflow-message" class="page-alert alert alert-danger" role="status" hidden></p>
-<div class="workflow-toolbar"><label class="search-input" for="workflow-search"><svg class="erp-icon"><use href="#icon-search" /></svg><input id="workflow-search" type="search" class="form-control" placeholder="Tìm biển số, khách hàng, mã phiếu…" aria-label="Tìm xe" /></label><div class="filters"><select class="form-select" id="vehicle-filter" aria-label="Lọc loại xe"><option value="">Tất cả loại xe</option><option>Ô tô</option><option>Xe máy</option><option>Xe điện & hybrid</option><option>Xe bán tải / xe tải nhẹ</option></select><select id="technician-filter" class="form-select" aria-label="Lọc kỹ thuật viên"><option value="">Tất cả kỹ thuật viên</option><option value="__unassigned">Chưa phân công</option></select></div></div>
-<section class="kanban-board" id="kanban-board" aria-label="Bảng quy trình sửa chữa">
-    <div class="kanban-column" data-status="Pending"><div class="kanban-header"><span><i class="status-dot" style="background:#5caac4"></i>Yêu cầu mới</span><span class="badge" id="count-Pending">0</span></div><div class="kanban-cards" id="cards-Pending"></div></div>
-    <div class="kanban-column" data-status="Confirmed"><div class="kanban-header"><span><i class="status-dot" style="background:#e2b45b"></i>Đã tiếp nhận</span><span class="badge" id="count-Confirmed">0</span></div><div class="kanban-cards" id="cards-Confirmed"></div></div>
-    <div class="kanban-column" data-status="InProgress"><div class="kanban-header"><span><i class="status-dot" style="background:#708ee1"></i>Đang sửa chữa</span><span class="badge" id="count-InProgress">0</span></div><div class="kanban-cards" id="cards-InProgress"></div></div>
-    <div class="kanban-column" data-status="Completed"><div class="kanban-header"><span><i class="status-dot" style="background:#6db38a"></i>Hoàn thành</span><span class="badge" id="count-Completed">0</span></div><div class="kanban-cards" id="cards-Completed"></div></div>
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = "Lịch hẹn";
+    ViewData["ManagementPage"] = "Workflow";
+}
+<div class="page-heading">
+    <div><h2>Theo dõi lịch hẹn</h2><p>Xem yêu cầu của khách hàng và cập nhật tiến độ sửa chữa.</p></div>
+    <a class="btn btn-primary" href="/Home/Booking"><svg class="erp-icon" aria-hidden="true"><use href="#icon-plus" /></svg>Đặt lịch mới</a>
+</div>
+<p id="workflow-message" class="alert alert-danger" role="alert" hidden></p>
+<section class="workflow-stats" aria-label="Tổng quan lịch hẹn">
+    <div><span>Tổng lịch hẹn</span><strong id="stat-total">—</strong></div>
+    <div><span>Chờ xác nhận</span><strong id="stat-pending">—</strong></div>
+    <div><span>Đã tiếp nhận</span><strong id="stat-confirmed">—</strong></div>
+    <div><span>Đang sửa</span><strong id="stat-in-progress">—</strong></div>
+    <div><span>Hoàn thành</span><strong id="stat-completed">—</strong></div>
 </section>
-<p class="workflow-summary" id="workflow-summary" role="status">Đang tải dữ liệu cửa hàng…</p>
-<details class="card p-3 mb-4" id="cancelled-section" hidden><summary class="small text-muted">Lịch hẹn đã hủy <span id="cancelled-count"></span></summary><div id="cancelled-cards" class="row g-3 mt-1"></div></details>
-<section class="tech-section" aria-labelledby="technicians-title"><h2 id="technicians-title" class="section-label">Đội ngũ kỹ thuật</h2><p class="section-caption">Khối lượng công việc từ các phiếu đã được phân công tại cửa hàng.</p><div id="technicians-grid" class="tech-grid"></div><div class="card empty-block" id="technicians-empty"><strong>Chưa có phân công kỹ thuật viên</strong>Mở một phiếu sửa chữa và điền kỹ thuật viên phụ trách để theo dõi công việc tại đây.</div></section>
+<section class="card" aria-label="Danh sách lịch hẹn">
+    <form id="workflow-filters" class="workflow-filters">
+        <div><label class="form-label" for="workflow-search">Tìm lịch hẹn</label><input id="workflow-search" class="form-control" type="search" maxlength="100" placeholder="Mã lịch, tên, SĐT hoặc biển số" /></div>
+        <div><label class="form-label" for="workflow-status">Trạng thái</label><select id="workflow-status" class="form-select"><option value="">Tất cả trạng thái</option><option value="Pending">Chờ xác nhận</option><option value="Confirmed">Đã tiếp nhận</option><option value="InProgress">Đang sửa</option><option value="Completed">Hoàn thành</option><option value="Cancelled">Đã hủy</option></select></div>
+        <div><label class="form-label" for="workflow-date">Ngày hẹn</label><input id="workflow-date" class="form-control" type="date" /></div>
+        <div class="filter-actions"><button class="btn btn-primary" type="submit">Tìm kiếm</button><button id="workflow-reset" class="btn btn-light" type="button">Xóa lọc</button></div>
+    </form>
+    <div class="table-responsive" id="workflow-table" aria-busy="true">
+        <table class="table table-erp appointment-table mb-0">
+            <caption class="visually-hidden">Danh sách lịch hẹn sửa xe, dùng nút Chi tiết để cập nhật trạng thái.</caption>
+            <thead><tr><th scope="col">Mã / Ngày hẹn</th><th scope="col">Khách hàng</th><th scope="col">Phương tiện</th><th scope="col">Dịch vụ</th><th scope="col">Trạng thái</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead>
+            <tbody id="workflow-rows"><tr><td colspan="6" class="empty-block">Đang tải lịch hẹn…</td></tr></tbody>
+        </table>
+    </div>
+    <div class="list-pagination">
+        <p id="workflow-summary" class="mb-0 text-muted" role="status" aria-live="polite">Đang tải dữ liệu…</p>
+        <nav aria-label="Phân trang lịch hẹn"><button id="workflow-prev" class="btn btn-light btn-sm" type="button" disabled>Trước</button><span id="workflow-page">Trang 1 / 1</span><button id="workflow-next" class="btn btn-light btn-sm" type="button" disabled>Sau</button></nav>
+    </div>
+</section>
+<p class="workflow-help">Tiến độ: Chờ xác nhận → Đã tiếp nhận → Đang sửa → Hoàn thành. Có thể hủy trước khi bắt đầu sửa.</p>
 
-<div class="modal fade" id="detail-modal" tabindex="-1" aria-labelledby="detail-title" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title" id="detail-title">Chi tiết tiếp nhận</h2><button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Đóng"></button></div><div class="modal-body"><div id="detail-content"></div><hr class="my-4" /><label for="detail-status" class="form-label">Cập nhật trạng thái</label><select id="detail-status" class="form-select"><option value="Pending">Chờ xác nhận</option><option value="Confirmed">Đã tiếp nhận</option><option value="InProgress">Đang sửa chữa</option><option value="Completed">Đã hoàn thành</option><option value="Cancelled">Đã hủy</option></select><p id="detail-message" class="text-danger small mt-3 mb-0" role="status"></p></div><div class="modal-footer"><a id="detail-job-link" class="btn btn-outline-primary" href="/Management/JobCard">Mở phiếu sửa chữa</a><button id="detail-save" class="btn btn-primary" type="button">Lưu trạng thái</button></div></div></div></div>
-<div class="modal fade" id="new-job-modal" tabindex="-1" aria-labelledby="new-job-title" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="new-job-form"><div class="modal-header"><h2 class="modal-title" id="new-job-title">Tiếp nhận phương tiện</h2><button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Đóng"></button></div><div class="modal-body"><p class="text-muted small mb-4">Tạo yêu cầu mới cho khách hàng tại cửa hàng.</p><div class="row g-3"><div class="col-md-6"><label for="new-customer" class="form-label">Họ tên khách hàng *</label><input id="new-customer" name="customerName" class="form-control" required maxlength="100" placeholder="Nguyễn Văn An" /></div><div class="col-md-6"><label for="new-phone" class="form-label">Số điện thoại *</label><input id="new-phone" name="phone" class="form-control" type="tel" required maxlength="20" placeholder="09xx xxx xxx" /></div><div class="col-md-6"><label for="new-vehicle" class="form-label">Loại xe *</label><select id="new-vehicle" name="vehicleType" class="form-select" required><option value="">Chọn loại xe</option><option>Ô tô</option><option>Xe máy</option><option>Xe điện & hybrid</option><option>Xe bán tải / xe tải nhẹ</option></select></div><div class="col-md-6"><label for="new-brand" class="form-label">Hãng / dòng xe *</label><input id="new-brand" name="brand" class="form-control" required maxlength="80" placeholder="Toyota Vios, Honda SH…" /></div><div class="col-md-6"><label for="new-plate" class="form-label">Biển số xe</label><input id="new-plate" name="licensePlate" class="form-control" maxlength="20" placeholder="30A-123.45" /></div><div class="col-md-6"><label for="new-service" class="form-label">Dịch vụ *</label><select id="new-service" name="service" class="form-select" required><option>Bảo dưỡng định kỳ</option><option>Sửa chữa tổng quát</option><option>Chẩn đoán điện & điện tử</option><option>Lốp & hệ thống phanh</option><option>Chăm sóc & làm đẹp xe</option><option>Kiểm tra tổng thể</option></select></div><div class="col-md-6"><label for="new-date" class="form-label">Ngày tiếp nhận *</label><input id="new-date" name="date" type="date" class="form-control" required /></div><div class="col-md-6"><label for="new-time" class="form-label">Khung giờ *</label><select id="new-time" name="time" class="form-select" required></select></div><div class="col-12"><label for="new-note" class="form-label">Tình trạng xe / yêu cầu của khách</label><textarea id="new-note" name="note" class="form-control" rows="3" maxlength="1000" placeholder="Mô tả vấn đề cần kiểm tra…"></textarea></div></div><p id="new-job-message" class="text-danger small mt-3 mb-0" role="status"></p></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button id="new-job-save" type="submit" class="btn btn-primary">Tạo yêu cầu</button></div></form></div></div></div>
-@section Scripts { <script src="~/js/workflow.js" asp-append-version="true" defer></script> }
+<div class="modal fade" id="detail-modal" tabindex="-1" aria-labelledby="detail-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered"><form id="detail-form" class="modal-content">
+        <div class="modal-header"><h2 class="modal-title" id="detail-title">Chi tiết lịch hẹn</h2><button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Đóng"></button></div>
+        <div class="modal-body">
+            <div id="detail-content" aria-live="polite"></div>
+            <hr class="my-4" />
+            <div class="mb-3"><label for="detail-status" class="form-label">Trạng thái xử lý</label><select id="detail-status" class="form-select" disabled></select><p id="detail-status-help" class="small text-muted mt-2 mb-0"></p></div>
+            <label for="detail-note" class="form-label">Ghi chú xử lý</label><textarea id="detail-note" class="form-control" rows="4" maxlength="2000" placeholder="Kết quả kiểm tra, nội dung đã xử lý hoặc hướng dẫn nhận xe…" disabled></textarea>
+            <p class="small text-muted mt-2 mb-0">Ghi chú này hiển thị cho khách khi tra cứu lịch hẹn.</p>
+            <p id="detail-message" class="text-danger mt-3 mb-0" role="alert"></p>
+        </div>
+        <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal" type="button">Đóng</button><button id="detail-save" class="btn btn-primary" type="submit" disabled>Lưu cập nhật</button></div>
+    </form></div>
+</div>
+@section Scripts {
+    <script src="~/js/workflow.js" asp-append-version="true" defer></script>
+}

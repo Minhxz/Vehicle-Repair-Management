@@ -15,11 +15,9 @@
         button.disabled = true;
         message.textContent = '';
         try {
-            const response = await fetch('/api/auth/login', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.querySelector('#username').value.trim(), password: password.value }) });
-            const result = await response.json();
-            if (!response.ok || !result.authenticated) throw new Error(result.message || 'Tên đăng nhập hoặc mật khẩu chưa đúng.');
+            const result = await window.AutoFixHttp.request('/api/auth/login', { method: 'POST', body: JSON.stringify({ username: document.querySelector('#username').value.trim(), password: password.value }) });
             const returnUrl = form.dataset.returnUrl;
-            window.location.assign(returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/Management/Workflow');
+            window.location.assign(result.role === 'Manager' && returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : result.redirectUrl);
         } catch (error) { message.textContent = error.message || 'Không thể kết nối. Vui lòng thử lại.'; button.disabled = false; }
     });
 })();
